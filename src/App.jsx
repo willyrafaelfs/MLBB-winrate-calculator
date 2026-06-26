@@ -68,7 +68,7 @@ export default function App() {
       {/* Footer */}
       <footer className="border-t border-gray-200">
         <div className="mx-auto max-w-5xl px-4 py-6 text-center text-sm text-gray-400 sm:px-6">
-          Built with React + Vite
+          Built by <a href="https://github.com/willyrafaelfs">Willyrafaelfs</a>
         </div>
       </footer>
     </div>

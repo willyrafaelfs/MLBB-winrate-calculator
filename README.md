@@ -45,7 +45,7 @@ If `currentWR >= targetWR`, the app shows that you've already reached your targe
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/your-username/mlbb-winrate.git
+git clone https://github.com/willyrafaelfs/MLBB-winrate-calculator.git
 cd mlbb-winrate
 
 # 2. Install dependencies
@@ -85,9 +85,9 @@ vercel
 
 ## Screenshot
 
-> _Add a screenshot of the app here._
+![App Screenshot](./src/assets/screenshot.png)
 
-![App Screenshot](./screenshot.png)
+![App Screenshot](./src/assets/screenshot2.png)
 
 ## Project Structure
 
@@ -110,6 +110,9 @@ mlbb-winrate/
 └── package.json
 ```
 
-## License
+## License & Credit
 
 MIT — free to use and modify.
+- **Willy Rafael F. Silalahi**
+- **GitHub:** [@willyrafaelfs](https://github.com/willyrafaelfs)
+- **Email:** [willy.rafaelfs@gmail.com](mailto:willy.rafaelfs@gmail.com)
