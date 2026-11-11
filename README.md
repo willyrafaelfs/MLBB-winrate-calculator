@@ -167,7 +167,8 @@ MLBB-winrate-calculator/
 
 ## License & Credit
 
-MIT — free to use and modify.
-- **Willy Rafael F. Silalahi**
+Released under the [MIT License](./LICENSE), free to use and modify.
+
+Designed and built by **Willy Rafael F. Silalahi**
 - **GitHub:** [@willyrafaelfs](https://github.com/willyrafaelfs)
-- **Email:** [willy.rafaelfs@gmail.com](mailto:willy.rafaelfs@gmail.com)
+- **GitLab:** [@willyrafaelfs](https://gitlab.com/willyrafaelfs)
