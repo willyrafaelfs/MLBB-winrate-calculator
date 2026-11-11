@@ -41,17 +41,57 @@ If `currentWR >= targetWR`, the app shows that you've already reached your targe
 - [Lucide React](https://lucide.dev/) (icons)
 - Plain React `useState` / `useMemo` — no global state, no localStorage
 
-## Run Locally
+## Clone the Repository
+
+The project is mirrored on both GitHub and GitLab — clone from either one:
 
 ```bash
-# 1. Clone the repo
+# GitHub
 git clone https://github.com/willyrafaelfs/MLBB-winrate-calculator.git
-cd mlbb-winrate
 
-# 2. Install dependencies
+# GitLab
+git clone https://gitlab.com/willyrafaelfs/MLBB-winrate-calculator.git
+
+cd MLBB-winrate-calculator
+```
+
+## Run with Docker
+
+The app is built with Node.js and served as static files by Nginx in a lightweight container. Requires [Docker](https://docs.docker.com/get-docker/) with Docker Compose.
+
+```bash
+# Build the image and start the container in the background
+docker compose up -d --build
+```
+
+Then open `http://localhost:8080`.
+
+Common commands:
+
+```bash
+docker compose logs -f      # follow container logs
+docker compose down         # stop and remove the container
+docker compose up -d --build  # rebuild after code changes
+```
+
+Without Docker Compose:
+
+```bash
+docker build -t mlbb-winrate-calculator .
+docker run -d -p 8080:80 --name mlbb-winrate-calculator mlbb-winrate-calculator
+```
+
+> To use a different port, change the left side of the port mapping (e.g. `"3000:80"`) in `docker-compose.yml`.
+
+## Run Locally (without Docker)
+
+Requires Node.js 20.19+ or 22.12+.
+
+```bash
+# 1. Install dependencies
 npm install
 
-# 3. Start the dev server
+# 2. Start the dev server
 npm run dev
 ```
 
@@ -92,7 +132,7 @@ vercel
 ## Project Structure
 
 ```
-mlbb-winrate/
+MLBB-winrate-calculator/
 ├── src/
 │   ├── components/
 │   │   ├── InputSection.jsx     # Three inputs + sliders + Calculate button
@@ -105,6 +145,10 @@ mlbb-winrate/
 │   ├── App.jsx
 │   ├── main.jsx
 │   └── index.css
+├── Dockerfile                   # Multi-stage build (Node → Nginx)
+├── docker-compose.yml           # Runs the app on port 8080
+├── nginx.conf                   # Nginx config for serving the build
+├── .dockerignore
 ├── index.html
 ├── tailwind.config.js
 └── package.json

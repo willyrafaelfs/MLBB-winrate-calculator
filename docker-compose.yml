@@ -1,0 +1,10 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mlbb-winrate-calculator:latest
+    container_name: mlbb-winrate-calculator
+    ports:
+      - "8080:80"
+    restart: unless-stopped
