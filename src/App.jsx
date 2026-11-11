@@ -1,76 +1,62 @@
-import { useMemo, useState } from 'react'
-import { Crosshair } from 'lucide-react'
-import InputSection from './components/InputSection'
-import ResultSummary from './components/ResultSummary'
-import ProgressCard from './components/ProgressCard'
-import ScenarioTable from './components/ScenarioTable'
+import { useEffect, useMemo, useState } from 'react'
+import Header from './components/Header'
+import Hero from './components/Hero'
+import Ledger from './components/Ledger'
+import Scenarios from './components/Scenarios'
 import ProjectionChart from './components/ProjectionChart'
-import { buildProjection, buildScenarios, computeStats } from './lib/calc'
+import Method from './components/Method'
+import Footer from './components/Footer'
+import { analyze } from './lib/calc'
+
+const DEFAULTS = { matches: '150', current: '52', target: '60' }
+const PARAMS = { matches: 'm', current: 'wr', target: 't' }
+
+function readInputsFromUrl() {
+  const params = new URLSearchParams(window.location.search)
+  const out = { ...DEFAULTS }
+  for (const [key, param] of Object.entries(PARAMS)) {
+    const v = params.get(param)
+    if (v !== null && /^[\d.,]{1,6}$/.test(v)) out[key] = v
+  }
+  return out
+}
 
 export default function App() {
-  const [inputs, setInputs] = useState({
-    totalMatches: 30,
-    currentWR: 70,
-    targetWR: 90,
-  })
+  const [inputs, setInputs] = useState(readInputsFromUrl)
+  const setInput = (key) => (value) => setInputs((prev) => ({ ...prev, [key]: value }))
 
-  // Recalculate on every input change (the Calculate button is optional/cosmetic).
-  const stats = useMemo(
-    () =>
-      computeStats({
-        totalMatches: Number(inputs.totalMatches),
-        currentWR: Number(inputs.currentWR),
-        targetWR: Number(inputs.targetWR),
-      }),
-    [inputs]
-  )
+  // Keep the URL in sync so a result can be shared as a link.
+  useEffect(() => {
+    const url = new URL(window.location.href)
+    for (const [key, param] of Object.entries(PARAMS)) url.searchParams.set(param, inputs[key])
+    window.history.replaceState(null, '', url)
+  }, [inputs])
 
-  const scenarios = useMemo(() => buildScenarios(stats), [stats])
-  const projection = useMemo(() => buildProjection(stats), [stats])
+  const result = useMemo(() => analyze(inputs), [inputs])
+
+  // While an input is mid-edit and invalid, keep the sections below on the last good answer.
+  const [stats, setStats] = useState(result)
+  if (!result.error && result !== stats) setStats(result)
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
-      {/* Header */}
-      <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand">
-              <Crosshair className="h-5 w-5 text-white" strokeWidth={2.2} />
-            </span>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">
-                MLBB Winrate Tracker
-              </h1>
-              <p className="text-sm text-gray-500">
-                Calculate matches needed to reach your target winrate
-              </p>
+    <div className="min-h-screen">
+      <Header />
+      <main>
+        <Hero inputs={inputs} setInput={setInput} result={result} />
+        {!stats.error && (
+          <>
+            <Ledger stats={stats} />
+            <div className="bg-paper text-ink">
+              <div className="mx-auto max-w-6xl space-y-24 px-5 py-20 sm:space-y-28 sm:px-8 sm:py-28">
+                {!stats.reached && <Scenarios stats={stats} />}
+                <ProjectionChart stats={stats} />
+                <Method />
+              </div>
             </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
-        <InputSection
-          inputs={inputs}
-          setInputs={setInputs}
-          onCalculate={() => setInputs((prev) => ({ ...prev }))}
-        />
-
-        <ResultSummary stats={stats} />
-
-        <ProgressCard stats={stats} />
-
-        <ScenarioTable scenarios={scenarios} stats={stats} />
-
-        <ProjectionChart data={projection} stats={stats} />
+          </>
+        )}
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-gray-200">
-        <div className="mx-auto max-w-5xl px-4 py-6 text-center text-sm text-gray-400 sm:px-6">
-          Built by <a href="https://github.com/willyrafaelfs">Willyrafaelfs</a>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

@@ -4,15 +4,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        brand: '#3B82F6',
-        positive: '#22C55E',
-        progress: '#F59E0B',
+        dawn: '#1F2BB8', // ultramarine base
+        ink: '#0E1470', // deep blue: losses, text on paper
+        paper: '#F3F1FF', // off-white with a blue cast
+        gold: '#FFC93C', // victory
+        ember: '#FF6B5A', // warnings, unreachable
+        haze: '#C9CCF5', // muted text on blue
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-      },
-      boxShadow: {
-        card: '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
+        display: ['"Big Shoulders Display"', 'Impact', 'sans-serif'],
+        sans: ['"Hanken Grotesk"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
     },
   },

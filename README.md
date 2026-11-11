@@ -1,23 +1,25 @@
-# MLBB Winrate Tracker
+# MLBB Winrate Calculator
 
-A clean, mobile-friendly **Mobile Legends: Bang Bang** target winrate calculator. Enter your current stats in aggregate — total matches, current winrate, and target winrate — and instantly see how many more wins you need, with scenario breakdowns and a live projection chart. No accounts, no backend, no data storage.
+A bilingual (Indonesian / English) **Mobile Legends: Bang Bang** winrate calculator. Type your stats into a single sentence (matches played, current winrate, target winrate) and it tells you how many wins in a row you need, shows your whole record match by match, and maps out what it takes if you can't win them all. No accounts, no backend.
 
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-38BDF8?logo=tailwindcss&logoColor=white)
 ![Recharts](https://img.shields.io/badge/Recharts-charts-22B5BF)
-![Lucide](https://img.shields.io/badge/Lucide-icons-F56565)
+![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## Features
 
-- **Target Winrate Calculator** — three inputs (total matches, current winrate %, target winrate %); everything recalculates instantly as you type.
-- **Result Summary** — four stat cards: current wins, wins needed, winrate gap, and minimum matches to play (assuming all wins).
-- **Progress Bar** — a visual bar of your current winrate progressing toward the target, with an "already reached" state.
-- **What If Scenarios** — a table showing how many additional matches you'd need if you maintain a 50% / 55% / 60% / 70% winrate going forward (rows that can't reach the target are filtered out).
-- **Projection Chart** — a line chart of projected winrate as you win more games, with a dashed target line and a marker at the crossing point.
-- **Icons, not emoji** — all decorative elements use [Lucide](https://lucide.dev/) icons.
-- **Responsive & modern** — light, clean UI built with Tailwind, works great on mobile.
+- **Sentence input**: the three stats are editable fields inside one sentence ("I've played 150 matches at 52% winrate, and I want 60%."). Results update as you type, and decimal commas like `52,5` work.
+- **One clear answer**: a large headline with the win streak you need, plus where that streak leaves you.
+- **Record ledger**: every match as a square: wins in gold, losses in navy, and the wins still to go as dashed outlines. Long records are grouped (one square = several matches) so the grid stays readable.
+- **Already there?**: if you've hit your target, it shows how many losses in a row you can afford before dropping below it.
+- **Realistic scenarios**: how many more matches you need at a forward winrate of 50% to 95%, with only the rates that can actually reach your target listed.
+- **Projection chart**: your winrate across the streak (or across a losing streak once you've reached the target), with the target line and the crossing point marked.
+- **Indonesian and English**: switch languages from the header. The choice is remembered, and numbers are formatted for each locale.
+- **Shareable links**: inputs and language are kept in the URL, e.g. `?m=150&wr=52&t=60&lang=en`.
+- **Clear errors**: impossible inputs (like a 100% target after a loss) explain what's wrong and how to fix it.
 
 ## How the math works
 
@@ -29,17 +31,19 @@ winsNeeded  = ceil((targetWR/100 * totalMatches - currentWins) / (1 - targetWR/1
 
 // Additional matches if you maintain a forward winrate f (only when f > target):
 n = (targetWR/100 * totalMatches - currentWins) / (f/100 - targetWR/100)
-```
 
-If `currentWR >= targetWR`, the app shows that you've already reached your target.
+// Once the target is reached, losses in a row you can afford:
+buffer = floor(currentWins / (targetWR/100) - totalMatches)
+```
 
 ## Tech Stack
 
 - [React](https://react.dev/) + [Vite](https://vitejs.dev/)
 - [Tailwind CSS v3](https://tailwindcss.com/)
 - [Recharts](https://recharts.org/) (chart)
-- [Lucide React](https://lucide.dev/) (icons)
-- Plain React `useState` / `useMemo` — no global state, no localStorage
+- Fonts: [Big Shoulders Display](https://fonts.google.com/specimen/Big+Shoulders+Display) and [Hanken Grotesk](https://fonts.google.com/specimen/Hanken+Grotesk)
+- A small React context for translations, no i18n library
+- Docker + Nginx for containerized deployment
 
 ## Clone the Repository
 
@@ -123,11 +127,15 @@ npm i -g vercel
 vercel
 ```
 
-## Screenshot
+## Screenshots
 
-![App Screenshot](./src/assets/screenshot.png)
+Desktop (English):
 
-![App Screenshot](./src/assets/screenshot2.png)
+![Desktop screenshot in English](./src/assets/screenshot.png)
+
+Mobile (Indonesian):
+
+<img src="./src/assets/screenshot2.png" alt="Mobile screenshot in Indonesian" width="320" />
 
 ## Project Structure
 
@@ -135,13 +143,16 @@ vercel
 MLBB-winrate-calculator/
 ├── src/
 │   ├── components/
-│   │   ├── InputSection.jsx     # Three inputs + sliders + Calculate button
-│   │   ├── ResultSummary.jsx    # Four result stat cards
-│   │   ├── ProgressCard.jsx     # Current vs target progress bar
-│   │   ├── ScenarioTable.jsx    # "What if" forward-winrate table
-│   │   └── ProjectionChart.jsx  # Projected winrate line chart
+│   │   ├── Header.jsx           # Wordmark and language switch
+│   │   ├── Hero.jsx             # Sentence input and the headline answer
+│   │   ├── Ledger.jsx           # Match-by-match record grid
+│   │   ├── Scenarios.jsx        # Matches needed at each forward winrate
+│   │   ├── ProjectionChart.jsx  # Winrate projection chart
+│   │   ├── Method.jsx           # "How it's calculated" disclosure
+│   │   └── Footer.jsx
 │   ├── lib/
 │   │   └── calc.js              # Pure calculation helpers
+│   ├── i18n.jsx                 # Indonesian / English strings and language context
 │   ├── App.jsx
 │   ├── main.jsx
 │   └── index.css

@@ -3,27 +3,91 @@
 @tailwind utilities;
 
 html {
-  scroll-behavior: smooth;
+  background: #1f2bb8;
 }
 
 body {
   margin: 0;
-  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  background-color: #f8fafc;
-  color: #0f172a;
+  background: #1f2bb8;
+  color: #f3f1ff;
+  font-family: 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'tnum' 1;
 }
 
-/* Slim, modern scrollbar for the match history table */
-.scroll-thin::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+::selection {
+  background: #ffc93c;
+  color: #0e1470;
 }
-.scroll-thin::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1;
-  border-radius: 9999px;
+
+:focus-visible {
+  outline: 3px solid #ffc93c;
+  outline-offset: 3px;
 }
-.scroll-thin::-webkit-scrollbar-track {
+
+/* Inline number fields inside the hero sentence */
+.stat-input {
+  font-family: 'Big Shoulders Display', Impact, sans-serif;
+  font-weight: 800;
   background: transparent;
+  color: #ffc93c;
+  border: 0;
+  border-bottom: 3px solid currentColor;
+  padding: 0 0.08em;
+  margin: 0;
+  line-height: 1;
+  text-align: center;
+  border-radius: 0;
+  appearance: textfield;
+  -moz-appearance: textfield;
+  transition: background-color 120ms ease;
+}
+.stat-input:hover {
+  background: rgba(255, 201, 60, 0.1);
+}
+.stat-input:focus-visible {
+  outline: none;
+  background: rgba(255, 201, 60, 0.16);
+}
+.stat-input[aria-invalid='true'] {
+  color: #ff6b5a;
+}
+
+/* Ledger squares */
+.cell {
+  width: var(--cell, 14px);
+  height: var(--cell, 14px);
+  border-radius: 3px;
+}
+.cell-win {
+  background: #ffc93c;
+}
+.cell-loss {
+  background: #0e1470;
+}
+.cell-need {
+  border: 1.5px dashed rgba(243, 241, 255, 0.75);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cell {
+    animation: cell-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: var(--d, 0ms);
+  }
+  @keyframes cell-in {
+    from {
+      transform: scale(0.2);
+      opacity: 0;
+    }
+  }
+}
+
+/* Size the inline fields to their content where supported */
+@supports (field-sizing: content) {
+  .stat-input {
+    field-sizing: content;
+    width: auto !important;
+    min-width: 1.2ch;
+  }
 }

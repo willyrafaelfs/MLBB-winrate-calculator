@@ -1,83 +1,108 @@
 // Pure calculation helpers for the target winrate calculator.
-// All winrate inputs are percentages (0-100); internally we convert to fractions.
+// Winrates come in as percentages (0-100) and are converted to fractions here.
 
-export function clampNumber(value, min, max) {
-  const n = Number(value)
-  if (Number.isNaN(n)) return min
-  return Math.min(max, Math.max(min, n))
+const EPS = 1e-9
+
+// Accepts "67,5" as well as "67.5" so Indonesian decimal commas work.
+export function parseNumber(raw) {
+  if (raw === '' || raw === null || raw === undefined) return NaN
+  return Number(String(raw).trim().replace(',', '.'))
 }
 
-// Core derived stats from the three inputs.
-export function computeStats({ totalMatches, currentWR, targetWR }) {
-  const T = Math.max(0, Math.floor(totalMatches) || 0)
-  const cwr = clampNumber(currentWR, 0, 100)
-  // Target is capped just under 100% so the math never divides by zero.
-  const twr = clampNumber(targetWR, 0, 99)
+// Validates the three inputs and derives every number the UI needs.
+// Returns { error } when the inputs can't produce an answer.
+export function analyze({ matches, current, target }) {
+  const T = Math.floor(parseNumber(matches))
+  const cwr = parseNumber(current)
+  const twr = parseNumber(target)
 
-  const c = cwr / 100 // current winrate fraction
-  const t = twr / 100 // target winrate fraction
+  if (!Number.isFinite(T) || T <= 0) return { error: 'noMatches', field: 'matches' }
+  if (!Number.isFinite(cwr) || cwr < 0) return { error: 'noCurrent', field: 'current' }
+  if (cwr > 100) return { error: 'currentOver', field: 'current' }
+  if (!Number.isFinite(twr) || twr <= 0) return { error: 'noTarget', field: 'target' }
+  if (twr > 100) return { error: 'targetOver', field: 'target' }
 
-  const currentWins = Math.round(T * c)
-  const currentLosses = Math.max(0, T - currentWins)
+  const W = Math.round((T * cwr) / 100)
+  const L = T - W
+  const t = twr / 100
 
-  const reached = cwr >= twr
+  if (twr >= 100 && L > 0) return { error: 'target100', field: 'target' }
 
-  // Wins needed assuming every additional match is won:
-  // (currentWins + x) / (T + x) >= t  =>  x >= (t*T - currentWins) / (1 - t)
+  const reached = cwr >= twr || W / T >= t - EPS
+
+  // Wins in a row needed: (W + x) / (T + x) >= t  =>  x >= (tT - W) / (1 - t)
   let winsNeeded = 0
   if (!reached) {
-    winsNeeded = Math.ceil((t * T - currentWins) / (1 - t))
-    if (winsNeeded < 1) winsNeeded = 1 // gap exists, so at least one win is required
+    winsNeeded = Math.max(1, Math.ceil((t * T - W) / (1 - t) - EPS))
   }
+
+  // Losses in a row you can afford while staying at or above target: W / (T + y) >= t
+  const buffer = reached ? Math.max(0, Math.floor(W / t - T + EPS)) : 0
+
+  const finalMatches = T + winsNeeded
+  const finalWR = ((W + winsNeeded) / finalMatches) * 100
 
   return {
     totalMatches: T,
     currentWR: cwr,
     targetWR: twr,
-    currentWins,
-    currentLosses,
+    wins: W,
+    losses: L,
     reached,
     winsNeeded,
-    // Minimum matches to play == winsNeeded (all assumed wins)
-    matchesToPlay: winsNeeded,
-    gap: Math.max(0, +(twr - cwr).toFixed(1)),
+    buffer,
+    finalMatches,
+    finalWR,
+    gap: Math.max(0, twr - cwr),
   }
 }
 
-// Scenario: maintaining a given forward winrate, how many additional matches
-// (and total after) are needed to reach the target.
-// n = (t*T - currentWins) / (f - t), only solvable when f > t.
-export function scenarioFor(stats, forwardWRPercent) {
+// Holding a forward winrate f, how many more matches until the target?
+// n = (tT - W) / (f - t), only solvable when f > t.
+export function scenarioFor(stats, forwardWR) {
   const t = stats.targetWR / 100
-  const f = forwardWRPercent / 100
-  if (f <= t) {
-    return { forwardWR: forwardWRPercent, possible: false }
-  }
-  const rawN = (t * stats.totalMatches - stats.currentWins) / (f - t)
-  const additionalMatches = Math.max(0, Math.ceil(rawN))
-  const additionalWins = Math.round(additionalMatches * f)
+  const f = forwardWR / 100
+  if (f <= t) return { forwardWR, possible: false }
+  const n = Math.max(1, Math.ceil((t * stats.totalMatches - stats.wins) / (f - t) - EPS))
   return {
-    forwardWR: forwardWRPercent,
+    forwardWR,
     possible: true,
-    additionalMatches,
-    additionalWins,
-    totalAfter: stats.totalMatches + additionalMatches,
+    matches: n,
+    wins: Math.ceil(n * f - EPS),
   }
 }
 
-export function buildScenarios(stats, forwardRates = [50, 55, 60, 70]) {
-  return forwardRates.map((r) => scenarioFor(stats, r))
+export const FORWARD_RATES = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
+
+export function buildScenarios(stats, rates = FORWARD_RATES) {
+  return rates.map((r) => scenarioFor(stats, r))
 }
 
-// Projection data for the chart: winrate as a function of additional wins (all won).
-// x = additional wins, projected = (currentWins + x) / (totalMatches + x).
+// Chart data. Not reached: winrate across a win streak.
+// Reached: winrate across a losing streak, to show how much room there is.
 export function buildProjection(stats) {
-  const maxX = Math.max(10, stats.winsNeeded + 10)
+  const { totalMatches: T, wins: W, reached } = stats
+  const pivot = reached ? stats.buffer : stats.winsNeeded
+  const span = Math.min(2000, pivot + Math.max(6, Math.round(pivot * 0.3)))
   const data = []
-  for (let x = 0; x <= maxX; x++) {
-    const denom = stats.totalMatches + x
-    const wr = denom === 0 ? 0 : ((stats.currentWins + x) / denom) * 100
-    data.push({ wins: x, winrate: +wr.toFixed(2) })
+  for (let x = 0; x <= span; x++) {
+    const wr = reached ? W / (T + x) : (W + x) / (T + x)
+    data.push({ x, winrate: +(wr * 100).toFixed(2) })
   }
   return data
+}
+
+// Ledger: one square per match, or per k matches once the record gets long.
+const STEPS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]
+
+export function buildLedger(stats, maxCells = 240) {
+  const total = stats.totalMatches + stats.winsNeeded
+  const per = STEPS.find((s) => total / s <= maxCells) ?? Math.ceil(total / maxCells)
+  const round = (n) => (n > 0 ? Math.max(1, Math.round(n / per)) : 0)
+  return {
+    per,
+    wins: round(stats.wins),
+    losses: round(stats.losses),
+    need: stats.winsNeeded > 0 ? Math.max(1, Math.ceil(stats.winsNeeded / per)) : 0,
+  }
 }
